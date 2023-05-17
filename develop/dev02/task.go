@@ -33,8 +33,13 @@ func main() {
 }
 
 func repeatingRunes(str string) (string, error) {
+	if len(str) == 0 {
+		return "", nil
+	}
+	if _, err := strconv.Atoi(string(str[0])); err == nil {
+		return "", fmt.Errorf("invalid string")
+	}
 	var result string
-
 	var curRune rune
 	var curCount int
 	var isEscape bool
@@ -51,10 +56,12 @@ func repeatingRunes(str string) (string, error) {
 			continue
 		}
 
-		// перезаписываем строку на основе встреченной руны и ее повторений
-		var err error
-		if result, err = addToResult(result, curRune, curCount); err != nil {
-			return "", err
+		// если текущей руны еще нет (либо в самом начале, либо после escape)
+		if curRune != 0 {
+			if curCount == 0 {
+				curCount = 1 // если руна без повторений (должна повториться 1 раз)
+			}
+			result = strings.Join([]string{result, strings.Repeat(string(curRune), curCount)}, "")
 		}
 
 		// обнуляемся, но учитываем \
@@ -64,26 +71,19 @@ func repeatingRunes(str string) (string, error) {
 			curRune = 0
 			continue
 		}
+		// запоминаем текущую руну
 		curRune = v
 	}
 	// если escape-последовательность была объявлена, но не реализована (прим.) "av\"
 	if isEscape {
 		return "", fmt.Errorf("invalid escape sequence")
 	}
-	return addToResult(result, curRune, curCount) // возвращаем строку (и ошибку) с последней повторенной n раз руной
-}
 
-func addToResult(result string, curRune rune, curCount int) (string, error) {
-	// если в начале встретилось число (прим.) "34av"
-	if curRune == 0 && curCount != 0 {
-		return "", fmt.Errorf("invalid string")
-	}
-	// если руна без повторений (должна повториться 1 раз)
-	if curRune != 0 && curCount == 0 {
+	// повторяем последнюю руну нужное количество раз
+	if curCount == 0 {
 		curCount = 1
 	}
-	for i := 0; i < curCount; i++ {
-		result = strings.Join([]string{result, string(curRune)}, "")
-	}
+	result = strings.Join([]string{result, strings.Repeat(string(curRune), curCount)}, "")
+
 	return result, nil
 }
