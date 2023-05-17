@@ -52,6 +52,7 @@ func repeatingRunes(str string) (string, error) {
 		}
 		// если встречаем цифры, то прибвляем к текущей сумме с учетом (прим.) e12 => eeeeeeeeeeee
 		if number, err := strconv.Atoi(string(v)); err == nil {
+			// проверки на переполнение int нет, но здесь легко можно дописать условие и выкидывать ошибку
 			curCount = curCount*10 + number
 			continue
 		}
