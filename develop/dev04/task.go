@@ -35,29 +35,27 @@ LOOP:
 
 		for key, set := range anagramSets {
 			sortedKey := sortString(strings.ToLower(key))
+			// если отсортированный ключ равен отсоритрованному слову (оба в нижнем регистре)
 			if sortedWord == sortedKey {
 				for _, value := range set {
 					if wordLower == strings.ToLower(value) {
-						continue LOOP
+						continue LOOP // если слово уже есть в множестве (регистр не важен - проверяем в нижнем), то переходим к следующему слову
 					}
 				}
+				// если есть подходящий ключ, то добавляем в множество и переходим к следующему слову
 				anagramSets[key] = append(anagramSets[key], word)
 				continue LOOP
 			}
 		}
+		// устанавливаем ключ
 		anagramSets[word] = []string{word}
 	}
 
-	// Удаление множеств анаграмм, состоящих из одного элемента
+	// удаляем множества из одного элемента
 	for key, value := range anagramSets {
 		if len(value) < 2 {
 			delete(anagramSets, key)
 		}
-	}
-
-	// Сортировка массивов слов внутри множеств анаграмм
-	for _, words := range anagramSets {
-		sort.Strings(words)
 	}
 
 	return anagramSets
@@ -72,7 +70,7 @@ func sortString(s string) string {
 }
 
 func main() {
-	words := []string{"пятак", "пятка","кОтСИЛ", "тяпка", "листок", "ПяТка", "слиток", "столик"}
+	words := []string{"пятак", "пятка", "кОтСИЛ", "тяпка", "листок", "ПяТка", "слиток", "столик"}
 
 	anagramSets := FindAnagramSets(words)
 
