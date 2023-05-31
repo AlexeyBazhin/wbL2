@@ -1,0 +1,7 @@
+su:*:0:0:User with special privileges:/:/usr/bin/sh
+daemon:*:1:1::/etc:
+bin:*:2:2::/usr/bin:
+sys:*:3:3::/usr/src:
+adm:*:4:4:system administrator:/var/adm:/usr/bin/sh
+pierre:*:200:200:Pierre Harper:/home/pierre:/usr/bin/sh
+joan:*:202:200:Joan Brown:/home/joan:/usr/bin/sh

@@ -1,5 +1,23 @@
 package main
 
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"dev11/internal/api"
+	"dev11/internal/db"
+	"dev11/internal/domain/service"
+	"dev11/internal/repository"
+
+	"github.com/kelseyhightower/envconfig"
+	_ "github.com/lib/pq"
+	"github.com/oklog/run"
+	"go.uber.org/zap"
+)
+
 /*
 === HTTP server ===
 
@@ -23,5 +41,59 @@ package main
 */
 
 func main() {
+	var (
+		ctx, ctxCancel = context.WithCancel(context.Background())
+		cfg            = new(Config)
+		logger         *zap.Logger
+		err            error
+	)
+	defer ctxCancel()
 
+	if cfg.Env == "production" {
+		logger, err = zap.NewProduction()
+	} else {
+		logger, err = zap.NewDevelopment()
+	}
+	if err != nil {
+		panic(fmt.Errorf("[main] Failed to initialize logger: %w", err))
+	}
+	sugaredLogger := logger.Sugar()
+
+	if err = envconfig.Process("APP", cfg); err != nil {
+		sugaredLogger.Fatal(err.Error())
+	}
+
+	conn, err := db.ConnectPostgreSQL(ctx, cfg.DSN)
+	if err != nil {
+		panic(fmt.Errorf("[main] Unable to open connection with DB: %w", err))
+	}
+
+	g := &run.Group{}
+
+	repo := repository.NewRepository(conn, sugaredLogger)
+	svc := service.NewService(repo)
+	api.New(
+		api.WithLogger(sugaredLogger),
+		api.WithService(svc),
+		api.WithBindAddress(cfg.BindAddr)).Run(g)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	g.Add(func() error {
+		shutdown := make(chan os.Signal, 1)
+		signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+		sugaredLogger.Info("[signal-watcher] Started")
+
+		select {
+		case sig := <-shutdown:
+			return fmt.Errorf("[signal-watcher] Terminated with signal: %s", sig.String())
+		case <-ctx.Done():
+			return nil
+		}
+	}, func(err error) {
+		cancel()
+		sugaredLogger.Error("[signal-watcher] Gracefully shutdown application", zap.Error(err))
+	})
+
+	sugaredLogger.Error("[main] Successful shutdown", zap.Error(g.Run()))
 }

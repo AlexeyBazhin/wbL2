@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  dev11-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      APP_DSN: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
+      APP_GHTOKEN: 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
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - backend
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
